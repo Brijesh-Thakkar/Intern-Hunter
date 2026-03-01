@@ -1,0 +1,168 @@
+# ─────────────────────────────────────────────────────────────────────────────
+#  Intern Hunter — Configuration
+#  Run `python setup.py` to fill in API keys and session credentials.
+# ─────────────────────────────────────────────────────────────────────────────
+
+# ── Candidate Profile ────────────────────────────────────────────────────────
+candidate:
+  name: "Brijesh Thakkar"
+  college: "IIT Jodhpur"
+  degree: "B.Tech CSE + EE"
+  year: 2             # current year of study
+  graduation_year: 2028
+  personal_email: "brijeshthakkariitian5126@gmail.com"
+  college_email: ""   # filled by setup.py
+  phone: "9537474957"
+  skills:
+    - C++
+    - Python
+    - JavaScript
+    - TypeScript
+    - React
+    - Next.js
+    - FastAPI
+    - Django
+    - Node.js
+    - TensorFlow
+    - PyTorch
+    - PostgreSQL
+    - MongoDB
+    - Redis
+    - Docker
+    - AWS EC2
+    - Kubernetes
+    - Git
+    - SQL
+    - REST APIs
+    - GraphQL
+    - Linux
+    - Bash
+    - Data Structures & Algorithms
+  target_roles:
+    - "Full Stack Intern"
+    - "Backend Intern"
+    - "ML/AI Intern"
+    - "Software Engineer Intern"
+    - "Systems Programming Intern"
+    - "Research Intern (CS)"
+    - "Data Science Intern"
+    - "Python Developer Intern"
+    - "React Developer Intern"
+    - "DevOps Intern"
+    - "Platform Engineering Intern"
+  # Notable projects referenced in cover letters
+  projects:
+    - name: "SentinelDB"
+      description: "High-performance distributed database with Raft consensus — handles 50k TPS"
+    - name: "NeuroLearn"
+      description: "Adaptive ML-powered learning platform serving 2,000+ students with personalised curricula"
+
+# ── Preferences (hard rules) ─────────────────────────────────────────────────
+preferences:
+  remote_only: true
+  remote_keywords:               # any of these must appear in the listing
+    - "remote"
+    - "wfh"
+    - "work from home"
+    - "anywhere in india"
+    - "work from anywhere"
+  min_stipend: 10000             # ₹/month — reject listings below this (0 = allow any)
+  max_applications_per_day: 20
+  min_ai_match_score: 70         # lowered to 70 so great jobs aren't filtered
+  blacklist_keywords:            # skip jobs containing these terms
+    - "unpaid"
+    - "no stipend"
+    - "equity only"
+    - "part-time only"
+
+# ── API Keys ──────────────────────────────────────────────────────────────────
+openai:
+  api_key: ""            # not used
+  model: ""              # not used
+
+gemini:
+  api_key: ""            # not used
+  model: ""              # not used
+
+# ── Mistral AI ────────────────────────────────────────────────────────────────
+mistral:
+  api_key: "jS5g2nvsW1DiAJ9fwLzShgQL4UhgAfG9"
+  scoring_model: "mistral-small-latest"       # fast + reliable for bulk scoring
+  cover_letter_model: "mistral-small-latest"  # small is excellent for cover letters
+  max_cover_letter_words: 150
+
+# ── Google Drive ─────────────────────────────────────────────────────────────
+google_drive:
+  folder_id: "1Ry8sBinEjwpwhcKLHv7Z8CcP2Wm4RZy2"
+  check_interval_minutes: 30
+  credentials_path: "credentials/credentials.json"
+  token_path: "credentials/token.json"
+  scopes:
+    - "https://www.googleapis.com/auth/drive.readonly"
+
+# ── Gmail / SMTP (filled by setup.py) ─────────────────────────────────────────
+email:
+  smtp_host: "smtp.gmail.com"
+  smtp_port: 587
+  sender_address: ""     # your Gmail address
+  app_password: ""       # Google App Password (16-char)
+
+# ── Telegram (optional, filled by setup.py) ──────────────────────────────────
+telegram:
+  enabled: false
+  bot_token: ""
+  chat_id: ""
+
+# ── Platforms ─────────────────────────────────────────────────────────────────
+platforms:
+  internshala:
+    enabled: true
+    auto_apply: true
+    session_file: "sessions/internshala.json"
+    base_url: "https://internshala.com/internships/work-from-home-internships/"
+    search_skills:
+      - react
+      - python
+      - backend
+      - machine-learning
+      - javascript
+      - typescript
+      - nodejs
+      - django
+      - fastapi
+      - data-science
+  linkedin:
+    enabled: true
+    auto_apply: true          # Easy Apply only
+    session_file: "sessions/linkedin.json"
+    base_url: "https://www.linkedin.com/jobs/search/"
+    search_skills:
+      - "full stack developer"
+      - "backend developer"
+      - "machine learning"
+      - "software engineer"
+      - "python developer"
+      - "react developer"
+  wellfound:
+    enabled: true
+    auto_apply: false         # goes to manual queue
+    session_file: "sessions/wellfound.json"
+    base_url: "https://wellfound.com/jobs"
+
+# ── Agent Behaviour ───────────────────────────────────────────────────────────
+agent:
+  run_interval_hours: 6
+  dry_run: false
+  data_dir: "data"
+  db_path: "data/agent.db"
+  screenshots_dir: "data/screenshots"
+  # Scheduling
+  daily_digest_hour: 8     # 8 AM
+  daily_digest_minute: 0
+
+# ── Scraping ─────────────────────────────────────────────────────────────────
+scraping:
+  min_delay_ms: 800
+  max_delay_ms: 3000
+  page_timeout_ms: 30000
+  user_agent: "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/124.0.0.0 Safari/537.36"
