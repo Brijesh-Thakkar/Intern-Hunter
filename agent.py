@@ -123,7 +123,7 @@ async def run_cycle(cfg: Dict[str, Any], dry_run: bool = False) -> None:
     from core.matcher import score_job, generate_cover_letter
     from scrapers import internshala_scraper, linkedin_scraper, wellfound_scraper
     from apply.auto_apply import apply_internshala, apply_linkedin
-    from notify.notifier import send_high_priority_alert, send_manual_queue_digest
+    from notify.notifier import send_high_priority_alert, send_manual_queue_digest, send_auto_applied_confirmation
 
     db_path = cfg["agent"]["db_path"]
     init_db(db_path)
@@ -288,6 +288,18 @@ async def run_cycle(cfg: Dict[str, Any], dry_run: bool = False) -> None:
                     status = await apply_linkedin(job, cover_letter, cfg, dry_run=dry_run)
                 if status == "auto_applied":
                     applied_this_cycle += 1
+                    # Send immediate confirmation email for every successful auto-apply
+                    try:
+                        send_auto_applied_confirmation(cfg, {
+                            **job,
+                            "role": job.get("title", "N/A"),
+                            "stipend": job["stipend"],
+                            "match_score": score,
+                            "cover_letter": cover_letter,
+                            "status": status,
+                        })
+                    except Exception as notify_exc:
+                        logger.error("Auto-apply confirmation email failed: %s", notify_exc)
             except Exception as exc:
                 logger.error("Auto-apply error: %s", exc)
                 status = "error"

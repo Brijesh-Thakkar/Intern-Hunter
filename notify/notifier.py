@@ -207,6 +207,101 @@ def send_high_priority_alert(
     db_log(db_path, "INFO", f"HIGH PRIORITY alert sent for {company} — {role} (score: {score})")
 
 
+def send_auto_applied_confirmation(cfg: Dict[str, Any], job: Dict[str, Any]) -> None:
+    """
+    ✅ AUTO-APPLIED CONFIRMATION — fires immediately after every successful application.
+    Sent to both personal email AND college email.
+    """
+    db_path = cfg["agent"]["db_path"]
+    score = job.get("match_score", 0)
+    role = job.get("role", job.get("title", "Intern"))
+    company = job.get("company", "Unknown")
+    stipend = job.get("stipend", "N/A")
+    platform = job.get("platform", "")
+    apply_url = job.get("apply_url", "")
+    cover = job.get("cover_letter", "")
+    applied_at = datetime.now(timezone.utc).strftime("%d %b %Y, %H:%M UTC")
+
+    # Score badge colour: green ≥ 85, yellow 70-84
+    if score >= 85:
+        badge_bg, badge_text = "#16a34a", "#ffffff"
+    elif score >= 70:
+        badge_bg, badge_text = "#d97706", "#ffffff"
+    else:
+        badge_bg, badge_text = "#6b7280", "#ffffff"
+
+    platform_icon = {"internshala": "🎓", "linkedin": "💼", "wellfound": "🚀"}.get(platform, "🌐")
+
+    view_btn = ""
+    if apply_url:
+        view_btn = f"""
+        <a href="{apply_url}" style="
+            display:inline-block;margin-top:14px;padding:10px 22px;
+            background:#2563eb;color:#fff;border-radius:8px;
+            text-decoration:none;font-weight:bold;font-size:13px;">View Application →</a>"""
+
+    cover_section = ""
+    if cover:
+        cover_section = f"""
+        <div style="margin-top:16px;">
+          <div style="font-size:12px;font-weight:bold;color:#6b7280;
+                      text-transform:uppercase;letter-spacing:.05em;margin-bottom:6px;"
+          >Cover Letter Submitted</div>
+          <div style="padding:14px;background:#f8fafc;border-left:4px solid #2563eb;
+                      border-radius:4px;font-size:13px;color:#374151;
+                      white-space:pre-wrap;line-height:1.6;">{cover}</div>
+        </div>"""
+
+    body = f"""
+    <div style="background:#d1fae5;border:1px solid #10b981;border-radius:10px;
+                padding:16px;margin-bottom:20px;">
+      <div style="font-size:15px;font-weight:bold;color:#065f46;">✅ Application submitted successfully</div>
+      <div style="font-size:13px;color:#047857;margin-top:4px;">Applied at {applied_at}</div>
+    </div>
+
+    <div style="background:#fff;border:1px solid #e5e7eb;border-radius:10px;padding:20px;">
+      <div style="display:flex;justify-content:space-between;align-items:flex-start;flex-wrap:wrap;gap:10px;">
+        <div>
+          <div style="font-size:20px;font-weight:bold;color:#111;">{role}</div>
+          <div style="font-size:14px;color:#6b7280;margin-top:4px;">
+            🏢 {company} &nbsp;|&nbsp; 💰 {stipend} &nbsp;|&nbsp; {platform_icon} {platform.capitalize()}
+          </div>
+        </div>
+        <div style="background:{badge_bg};color:{badge_text};padding:8px 16px;
+                    border-radius:20px;font-weight:bold;font-size:15px;white-space:nowrap;">
+          {score}/100
+        </div>
+      </div>
+      {cover_section}
+      {view_btn}
+    </div>
+    <p style="color:#9ca3af;font-size:12px;margin-top:16px;">
+      This confirmation was sent automatically by Intern Hunter.
+    </p>
+    """
+
+    subject = f"\u2705 Applied: {role} @ {company} \u2014 Intern Hunter"
+    html = _email_wrapper(body, f"Application Confirmed \u2014 {company}")
+
+    recipients = [cfg["candidate"]["personal_email"]]
+    college_email = cfg["candidate"].get("college_email", "")
+    if college_email and college_email not in recipients:
+        recipients.append(college_email)
+
+    _send_email(cfg, recipients, subject, html)
+
+    # Telegram ping
+    _send_telegram(
+        cfg,
+        f"\u2705 <b>Applied:</b> {role} @ {company}\n"
+        f"\U0001f4b0 {stipend} | Score: {score}/100\n"
+        f"{platform_icon} {platform.capitalize()} | {applied_at}\n"
+        f"\U0001f517 {apply_url}",
+    )
+
+    db_log(db_path, "INFO", f"Auto-apply confirmation sent: {company} — {role} ({score}/100)")
+
+
 def send_manual_queue_digest(cfg: Dict[str, Any], jobs: List[Dict]) -> None:
     """
     📋 MANUAL QUEUE — send digest of un-notified manual queue jobs.
@@ -267,16 +362,31 @@ def send_daily_digest(cfg: Dict[str, Any]) -> None:
 
     subject = f"📊 Daily Intern Report: {n_auto} auto-applied, {n_manual} in queue"
 
-    auto_list_html = "".join(
-        f"<li style='margin-bottom:6px;'><b>{j.get('company','N/A')}</b> — "
-        f"{j.get('role', j.get('title','N/A'))} "
-        f"<span style='color:#6b7280;font-size:12px;'>({j.get('match_score',0)}/100)</span></li>"
-        for j in auto_applied[:5]
+    auto_applied_cards_html = "".join(
+        _job_card_html(
+            {
+                **j,
+                "role": j.get("role", j.get("title")),
+                "stipend": j.get("stipend", "N/A"),
+                "cover_letter": j.get("cover_letter", ""),
+            },
+            show_apply_btn=False,
+        )
+        for j in sorted(auto_applied, key=lambda x: x.get("match_score", 0), reverse=True)[:8]
     )
     manual_list_html = "".join(
         _job_card_html({**j, "role": j.get("role", j.get("title")), "cover_letter": ""}, show_apply_btn=True)
         for j in manual_queued[:5]
     )
+
+    auto_section = ""
+    if auto_applied_cards_html:
+        auto_section = f"""
+        <h3 style="color:#065f46;margin-top:24px;">✅ Already Applied Today ({n_auto} jobs)</h3>
+        <p style="color:#6b7280;font-size:13px;margin-top:-8px;margin-bottom:12px;">
+          Applications submitted automatically in the last 24 hours.
+        </p>
+        {auto_applied_cards_html}"""
 
     body = f"""
     <h2 style="margin-top:0;color:#1e293b;">📊 Daily Internship Report</h2>
@@ -295,9 +405,9 @@ def send_daily_digest(cfg: Dict[str, Any]) -> None:
       </div>
     </div>
 
-    {"<h3 style='color:#065f46;'>✅ Recent Auto-Applied (top 5)</h3><ul style='color:#374151;font-size:14px;'>" + auto_list_html + "</ul>" if auto_list_html else ""}
+    {auto_section}
 
-    {"<h3 style='color:#92400e;'>📋 Manual Queue (top 5) — Review & Apply</h3>" + manual_list_html if manual_list_html else ""}
+    {"<h3 style='color:#92400e;margin-top:24px;'>📋 Manual Queue (top 5) — Review & Apply</h3>" + manual_list_html if manual_list_html else ""}
 
     <p style="color:#9ca3af;font-size:12px;margin-top:20px;">
       Generated at {datetime.now(timezone.utc).strftime('%Y-%m-%d %H:%M')} UTC by Intern Hunter
