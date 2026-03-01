@@ -1,0 +1,50 @@
+# Python
+__pycache__/
+*.py[cod]
+*$py.class
+*.pyc
+*.pyo
+*.pyd
+
+# Distribution / packaging
+*.egg
+*.egg-info/
+dist/
+build/
+=*.*.*/
+=*
+
+# Virtual environments
+venv/
+env/
+.venv/
+.env/
+
+# Database files
+*.db
+*.sqlite3
+data/
+
+# Credentials & secrets
+credentials/
+*.pem
+*.key
+*.json
+
+# Screenshots
+data/screenshots/
+
+# Logs
+*.log
+logs/
+
+# Sessions
+sessions/
+
+# OS
+.DS_Store
+Thumbs.db
+
+# IDE
+.vscode/
+.idea/
