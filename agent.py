@@ -430,9 +430,15 @@ def main():
         logger.info("♻️  Reset complete — cleared %d cached jobs. Running fresh cycle now.", n)
 
     if args.schedule:
+        # ── Local / VM mode: APScheduler keeps process alive every N hours ──
         run_scheduler(cfg, dry_run=dry_run)
     else:
+        # ── GitHub Actions / single-run mode ──────────────────────────────
+        # GitHub Actions triggers the cron externally; we just run once & exit.
+        logger.info("Mode: single-run (GitHub Actions / manual)")
         asyncio.run(run_cycle(cfg, dry_run=dry_run))
+        logger.info("✅  Single-run cycle complete — exiting 0")
+        sys.exit(0)
 
 
 if __name__ == "__main__":

@@ -1,0 +1,107 @@
+name: 🎯 Intern Hunter — Auto Apply
+
+on:
+  schedule:
+    - cron: "0 */6 * * *"   # Every 6 hours (00:00, 06:00, 12:00, 18:00 UTC)
+  workflow_dispatch:          # Manual trigger from GitHub UI
+    inputs:
+      dry_run:
+        description: 'Dry run (no actual applying)'
+        required: false
+        default: 'false'
+        type: boolean
+      reset_cache:
+        description: 'Reset job cache (re-score all jobs)'
+        required: false
+        default: 'false'
+        type: boolean
+
+jobs:
+  run-agent:
+    runs-on: ubuntu-latest
+    timeout-minutes: 45
+
+    steps:
+      # ── 1. Checkout ───────────────────────────────────────────────────────
+      - name: 📥 Checkout
+        uses: actions/checkout@v4
+
+      # ── 2. Python setup ───────────────────────────────────────────────────
+      - name: 🐍 Setup Python 3.11
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+          cache: 'pip'
+
+      # ── 3. Install Python dependencies ───────────────────────────────────
+      - name: 📦 Install Dependencies
+        run: |
+          python -m pip install --upgrade pip -q
+          pip install -r requirements.txt -q
+
+      # ── 4. Install Playwright + Chromium ─────────────────────────────────
+      - name: 🎭 Install Playwright Chromium
+        run: |
+          playwright install chromium
+          playwright install-deps chromium
+
+      # ── 5. Restore SQLite database from cache ────────────────────────────
+      #  Uses a rolling key so the DB accumulates across runs.
+      #  restore-keys: falls back to the most recent DB if key misses.
+      - name: 💾 Restore Job Database Cache
+        if: ${{ github.event.inputs.reset_cache != 'true' }}
+        uses: actions/cache@v4
+        id: db-cache
+        with:
+          path: data/agent.db
+          key: intern-hunter-db-${{ github.run_number }}
+          restore-keys: |
+            intern-hunter-db-
+
+      # ── 6. Inject config.yaml + session cookies from secrets ─────────────
+      - name: 🔧 Inject Config + Sessions
+        run: python .github/scripts/inject_config.py
+        env:
+          MISTRAL_API_KEY:      ${{ secrets.MISTRAL_API_KEY }}
+          GMAIL_SENDER:         ${{ secrets.GMAIL_SENDER }}
+          GMAIL_APP_PASSWORD:   ${{ secrets.GMAIL_APP_PASSWORD }}
+          COLLEGE_EMAIL:        ${{ secrets.COLLEGE_EMAIL }}
+          TELEGRAM_BOT_TOKEN:   ${{ secrets.TELEGRAM_BOT_TOKEN }}
+          TELEGRAM_CHAT_ID:     ${{ secrets.TELEGRAM_CHAT_ID }}
+          INTERNSHALA_SESSION:  ${{ secrets.INTERNSHALA_SESSION }}
+          LINKEDIN_SESSION:     ${{ secrets.LINKEDIN_SESSION }}
+
+      # ── 7. Run the agent (single-cycle mode) ─────────────────────────────
+      - name: 🚀 Run Intern Hunter
+        run: |
+          DRY_RUN_FLAG=""
+          if [ "${{ github.event.inputs.dry_run }}" = "true" ]; then
+            DRY_RUN_FLAG="--dry-run"
+          fi
+          python agent.py $DRY_RUN_FLAG
+        env:
+          DISPLAY: :99
+
+      # ── 8. Print dashboard summary (always runs even if agent fails) ──────
+      - name: 📊 Show Dashboard Summary
+        if: always()
+        run: python dashboard.py
+        continue-on-error: true
+
+      # ── 9. Save updated DB back to cache ─────────────────────────────────
+      - name: 💾 Save Job Database Cache
+        if: always()
+        uses: actions/cache@v4
+        with:
+          path: data/agent.db
+          key: intern-hunter-db-${{ github.run_number }}
+
+      # ── 10. Upload screenshots as artifact (for debugging) ────────────────
+      - name: 📸 Upload Screenshots
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: screenshots-${{ github.run_number }}
+          path: data/screenshots/
+          if-no-files-found: ignore
+          retention-days: 3

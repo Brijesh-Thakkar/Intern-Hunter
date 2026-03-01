@@ -1,4 +1,4 @@
-# Python
+# ── Python ────────────────────────────────────────────────────────────────────
 __pycache__/
 *.py[cod]
 *$py.class
@@ -6,45 +6,51 @@ __pycache__/
 *.pyo
 *.pyd
 
-# Distribution / packaging
+# ── Distribution / packaging ─────────────────────────────────────────────────
 *.egg
 *.egg-info/
 dist/
 build/
+*.tar.gz
+*.whl
 =*.*.*/
 =*
 
-# Virtual environments
+# ── Virtual environments ──────────────────────────────────────────────────────
 venv/
 env/
 .venv/
 .env/
 
-# Database files
+# ── Config with real secrets (use config.template.yaml instead) ──────────────
+config.yaml
+.env.deploy
+
+# ── Database files ────────────────────────────────────────────────────────────
 *.db
 *.sqlite3
 data/
 
-# Credentials & secrets
+# ── Credentials & secrets ────────────────────────────────────────────────────
 credentials/
 *.pem
 *.key
 *.json
 
-# Screenshots
+# ── Screenshots ───────────────────────────────────────────────────────────────
 data/screenshots/
 
-# Logs
+# ── Logs ─────────────────────────────────────────────────────────────────────
 *.log
 logs/
 
-# Sessions
+# ── Sessions ─────────────────────────────────────────────────────────────────
 sessions/
 
-# OS
+# ── OS ───────────────────────────────────────────────────────────────────────
 .DS_Store
 Thumbs.db
 
-# IDE
+# ── IDE ───────────────────────────────────────────────────────────────────────
 .vscode/
 .idea/
