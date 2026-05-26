@@ -122,10 +122,23 @@ async def apply_internshala(
             )
             await _random_delay(cfg["scraping"]["min_delay_ms"], cfg["scraping"]["max_delay_ms"])
 
-            # Click Apply button
+            # Dismiss Internshala Pro modal if present
+            try:
+                close_btn = await page.query_selector(
+                    ".upgrade_to_pro_modal__close, button.close_action, "
+                    "button:has-text('Cancel'), [class*='modal'] button:has-text('×')"
+                )
+                if close_btn:
+                    await close_btn.click()
+                    await asyncio.sleep(0.5)
+            except Exception:
+                pass
+
+            # Click Apply button — use real selector from page inspection
             apply_btn = await page.query_selector(
-                "button#continue_button, button.btn-block, button:has-text('Apply Now'), "
-                "a.apply_now_btn, [id*='apply'], button:has-text('Apply')"
+                "a.top_apply_now_cta, button#continue_button, "
+                "a[class*='apply_now'], button:has-text('Apply now'), "
+                "button:has-text('Apply Now'), button:has-text('Apply')"
             )
             if not apply_btn:
                 logger.warning("[Apply/Internshala] Apply button not found for %s", job["url"])
