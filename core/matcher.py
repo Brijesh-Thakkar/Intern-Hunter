@@ -7,7 +7,10 @@ import json
 import logging
 from typing import Dict, Any, Tuple, Optional
 
-from mistralai import Mistral
+try:
+    from mistralai import Mistral
+except ImportError:
+    from mistralai.client import Mistral
 
 logger = logging.getLogger(__name__)
 
